@@ -1,13 +1,38 @@
+# ------------------------------------------------------------------------------
+# ⛳️ Test Grouping Configuration
+# ------------------------------------------------------------------------------
+
 [test-groups]
+# Group to run tests serially (e.g., tests with shared global state or DB access)
 serial-tests = { max-threads = 1 }
 
-[profile.default]
-# Default settings
+# You can define more groups here if needed, for example:
+# db-tests = { max-threads = 2 }
 
+# ------------------------------------------------------------------------------
+# 🔧 Default Profile Configuration
+# ------------------------------------------------------------------------------
+
+[profile.default]
+# You can optionally enable fail-fast, retries, etc.:
+# fail-fast = false
+# retries = { backoff = "linear", count = 2 }
+
+# ------------------------------------------------------------------------------
+# 🔁 Override Specific Tests (by name or pattern)
+# ------------------------------------------------------------------------------
+
+# Ensure tests marked with `#[serial]` or similar logic run one at a time
 [[profile.default.overrides]]
 filter = 'test(serial_tests)'
 test-group = 'serial-tests'
 
+# Customize timeout for slow-running tests
 [[profile.default.overrides]]
 filter = 'test(test_order_book)'
 slow-timeout = { period = "300s" }
+
+# Example: increase timeout for all integration tests matching a pattern
+# [[profile.default.overrides]]
+# filter = 'test("tests::integration::*")'
+# slow-timeout = { period = "180s" }
