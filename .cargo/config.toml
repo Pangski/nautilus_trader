@@ -1,23 +1,68 @@
 [target.'cfg(all())']
 rustflags = [
-    # https://rust-lang.github.io/rust-clippy/master/index.html#drop_non_drop
-    # Disable this lint as we explicitly drop even when `Drop` is not implemented
-    "-Aclippy::drop_non_drop",
+    # Linting
+    "-Aclippy::drop_non_drop",           # We explicitly drop types even without Drop trait
+    "-Aclippy::needless_return",         # Allow `return` at end of block
+    "-Aclippy::unnecessary_wraps",       # Allow unnecessary Option/Result wrapping
+    "-Aclippy::too_many_arguments",      # Allow functions with many arguments (e.g., in systems code)
+
+    # Debugging/optimizations
+    "-C", "debuginfo=2",                 # Generate debug symbols (2 = full)
+    "-C", "opt-level=1",                 # Some optimization even in dev
+    "-C", "target-cpu=native",           # Optimize for host machine
 ]
 
 [target.x86_64-apple-darwin]
 rustflags = [
     "-C", "link-arg=-undefined",
     "-C", "link-arg=dynamic_lookup",
+    "-C", "target-cpu=apple-a12",       # Optimize for newer Apple chips
 ]
 
 [target.aarch64-apple-darwin]
 rustflags = [
     "-C", "link-arg=-undefined",
     "-C", "link-arg=dynamic_lookup",
+    "-C", "target-cpu=apple-m1",        # Specifically optimize for Apple M1 chip
+]
+
+[target.x86_64-unknown-linux-gnu]
+rustflags = [
+    "-C", "target-feature=+sse2,+sse4.2", # Enable SIMD features
+    "-C", "link-arg=-Wl,-rpath,$ORIGIN",  # Dynamic rpath
+    "-C", "relocation-model=pic",
+]
+
+[target.aarch64-unknown-linux-gnu]
+rustflags = [
+    "-C", "target-feature=+neon",        # ARM SIMD
+    "-C", "relocation-model=pic",
 ]
 
 [target.x86_64-pc-windows-msvc]
 rustflags = [
+    "-C", "target-feature=+crt-static",  # Statically link C runtime
+    "-C", "link-args=/DEBUG",            # Enable debug info
+]
+
+[target.'cfg(windows)']
+rustflags = [
     "-C", "target-feature=+crt-static",
 ]
+
+[build]
+# Optional: override default target directory
+target-dir = "target"
+
+[profile.release]
+opt-level = "z"              # Optimize for size
+lto = true                   # Enable link-time optimization
+debug = true                 # Keep debug info in release
+codegen-units = 1            # Better optimization at cost of compile time
+panic = "abort"              # Smaller binary if you don't need stack unwinding
+overflow-checks = true       # Keep integer overflow checks
+
+[profile.dev]
+opt-level = 1
+debug = true
+overflow-checks = true
